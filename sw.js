@@ -1,7 +1,7 @@
 // Service Worker — El Dourado Ferramentas
 // Cache-first com fallback de rede, e atualização em background
 
-const CACHE_VERSION = 'eldourado-v1';
+const CACHE_VERSION = 'eldourado-v2';
 const CORE_FILES = [
   './',
   './index.html',
