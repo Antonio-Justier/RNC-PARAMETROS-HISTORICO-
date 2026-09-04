@@ -170,6 +170,9 @@
   .btn-secondary:hover { background: var(--line-soft); }
   .btn-danger { background: var(--err); color: white; }
   .btn-danger:hover { background: #b53b44; }
+  .btn-print { background: #1a5f9e; color: white; display: inline-flex; align-items: center; gap: 7px; }
+  .btn-print:hover { background: #1c6cb3; }
+  .btn-print svg { width: 17px; height: 17px; }
 
   /* ===== Parâmetros de Compras (pc) ===== */
   .pc-card {
@@ -783,8 +786,9 @@
 
   <div class="footer-bar">
     <div class="info-text"><span id="pc-count">0</span> linha(s) preenchida(s)</div>
-    <div style="display: flex; gap: 8px;">
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
       <button class="btn btn-secondary" onclick="pc.clear()">Limpar</button>
+      <button class="btn btn-print" onclick="pc.generatePDF('print')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>Imprimir</button>
       <button class="btn btn-primary" onclick="pc.generatePDF()">Gerar PDF</button>
     </div>
   </div>
@@ -903,7 +907,8 @@
 
   <div class="footer-bar">
     <button class="btn btn-secondary" onclick="rnc.clear()">Limpar</button>
-    <button class="btn btn-primary" onclick="rnc.generatePDF()">Gerar PDF</button>
+    <button class="btn btn-print" onclick="rnc.generatePDF('print')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>Imprimir</button>
+      <button class="btn btn-primary" onclick="rnc.generatePDF()">Gerar PDF</button>
   </div>
 </section>
 
@@ -950,7 +955,8 @@
 
   <div class="footer-bar">
     <button class="btn btn-secondary" onclick="placa.clear()">Limpar</button>
-    <button class="btn btn-primary" onclick="placa.generatePDF()">Gerar PDF</button>
+    <button class="btn btn-print" onclick="placa.generatePDF('print')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>Imprimir</button>
+      <button class="btn btn-primary" onclick="placa.generatePDF()">Gerar PDF</button>
   </div>
 </section>
 
@@ -1034,7 +1040,8 @@
 
   <div class="footer-bar">
     <button class="btn btn-secondary" onclick="proto.clear()">Limpar</button>
-    <button class="btn btn-primary" onclick="proto.gerarPDF()">Gerar PDF</button>
+    <button class="btn btn-print" onclick="proto.gerarPDF('print')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>Imprimir</button>
+      <button class="btn btn-primary" onclick="proto.gerarPDF()">Gerar PDF</button>
   </div>
 </section>
 
@@ -1262,6 +1269,78 @@ function genId() {
 }
 
 /* ====================================================
+   IMPRESSÃO DIRETA (sem download)
+   Monta um documento HTML completo dentro de um iframe
+   oculto e dispara a caixa de impressão nativa do sistema.
+   No celular, essa caixa entrega direto para a impressora
+   Epson (via AirPrint no iPhone ou Epson Print Enabler no
+   Android) — ou permite "Salvar/Compartilhar" para o app
+   da Epson, sem precisar baixar o arquivo antes.
+==================================================== */
+function printDocument(bodyHTML, orientation) {
+  orientation = orientation === 'landscape' ? 'landscape' : 'portrait';
+  return new Promise((resolve) => {
+    const old = document.getElementById('print-frame');
+    if (old) old.remove();
+
+    const iframe = document.createElement('iframe');
+    iframe.id = 'print-frame';
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;';
+
+    const docHTML =
+      '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">' +
+      '<title>Impressão</title><style>' +
+      '@page { size: A4 ' + orientation + '; margin: 8mm; }' +
+      '* { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }' +
+      'html,body { margin:0; padding:0; font-family: Arial, Helvetica, sans-serif; color:#000; }' +
+      'img.print-full { width:100%; height:auto; display:block; }' +
+      '.pl-wrap { padding: 4mm; }' +
+      '.pl-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }' +
+      '.pl-head h1 { font-size:16px; margin:0; text-transform:uppercase; }' +
+      '.pl-head img { width:120px; height:auto; }' +
+      '.pl-table { width:100%; border-collapse:collapse; }' +
+      '.pl-table th { background:#898989; color:#fff; border:0.5px solid #000; padding:7px 8px; font-size:11px; text-transform:uppercase; }' +
+      '.pl-table td { border:0.5px solid #000; padding:7px 8px; font-size:11px; }' +
+      '.pl-table td.c, .pl-table th.c { text-align:center; }' +
+      '</style></head><body>' + bodyHTML + '</body></html>';
+
+    let finished = false;
+    const fire = () => {
+      if (finished) return;
+      finished = true;
+      try {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      } catch (e) {
+        console.warn('Falha ao imprimir:', e);
+        toast('Não foi possível abrir a impressão neste dispositivo', 'erro');
+      }
+      // Remove o iframe depois que a caixa de impressão foi tratada.
+      setTimeout(() => { iframe.remove(); resolve(); }, 1000);
+    };
+
+    iframe.onload = () => {
+      const idoc = iframe.contentDocument || iframe.contentWindow.document;
+      const imgs = idoc ? idoc.images : [];
+      if (!imgs || imgs.length === 0) { fire(); return; }
+      let pending = imgs.length;
+      const check = () => { if (--pending <= 0) fire(); };
+      for (let i = 0; i < imgs.length; i++) {
+        const im = imgs[i];
+        if (im.complete) { check(); }
+        else { im.onload = check; im.onerror = check; }
+      }
+      // Rede de segurança: imprime mesmo se alguma imagem travar.
+      setTimeout(fire, 2500);
+    };
+
+    iframe.srcdoc = docHTML;
+    document.body.appendChild(iframe);
+  });
+}
+
+/* ====================================================
    TABS: navegação entre abas
 ==================================================== */
 const tabs = {
@@ -1371,12 +1450,14 @@ const pc = {
     this.updateCount();
   },
 
-  generatePDF() {
+  generatePDF(mode = 'download') {
     const data = this.collect();
     if (data.length === 0) {
-      toast('Preencha pelo menos uma linha antes de gerar o PDF.', 'erro');
+      toast('Preencha pelo menos uma linha antes de gerar.', 'erro');
       return;
     }
+
+    if (mode === 'print') { this.print(data); return; }
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -1435,6 +1516,35 @@ const pc = {
     });
 
     toast('PDF gerado e salvo no histórico');
+  },
+
+  async print(data) {
+    data = data || this.collect();
+    if (data.length === 0) {
+      toast('Preencha pelo menos uma linha antes de imprimir.', 'erro');
+      return;
+    }
+    const now = new Date();
+    const stamp = `${String(now.getDate()).padStart(2,'0')}-${String(now.getMonth()+1).padStart(2,'0')}-${now.getFullYear()}`;
+    const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    let rows = '';
+    data.forEach(d => {
+      rows += '<tr><td>' + esc(d.produto || '-') + '</td><td class="c">' + esc(d.atual || '-') + '</td><td class="c">' + esc(d.comprar || '-') + '</td></tr>';
+    });
+    const body =
+      '<div class="pl-wrap">' +
+      '<div class="pl-head"><h1>Parâmetros de Compras</h1><img src="' + LOGO_SRC + '"></div>' +
+      '<table class="pl-table"><thead><tr><th style="width:60%">Produto</th><th class="c" style="width:20%">Quant. Atual</th><th class="c" style="width:20%">Comprar</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table></div>';
+
+    toast('Abrindo impressão...');
+    await printDocument(body, 'portrait');
+
+    historico.add({
+      type: 'pc',
+      title: `Parâmetros — ${data.length} ${data.length === 1 ? 'item' : 'itens'} (${stamp.replace(/-/g, '/')})`,
+      items: data
+    });
   }
 };
 
@@ -1523,13 +1633,13 @@ const rnc = {
     toast('Formulário RNC limpo');
   },
 
-  async generatePDF() {
+  async generatePDF(mode = 'download') {
     if (!this.val('numeroRnc') || !this.val('produto')) {
       toast('Preencha pelo menos o nº da RNC e o produto', 'erro');
       return;
     }
 
-    toast('Gerando PDF, aguarde...');
+    toast(mode === 'print' ? 'Preparando impressão...' : 'Gerando PDF, aguarde...');
 
     // Preenche o template oculto
     document.getElementById('p-numero').textContent     = this.val('numeroRnc');
@@ -1566,27 +1676,32 @@ const rnc = {
         backgroundColor: '#ffffff'
       });
 
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-      const pdfW = pdf.internal.pageSize.getWidth();
-      const pdfH = pdf.internal.pageSize.getHeight();
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      const imgRatio = canvas.width / canvas.height;
-      const pageRatio = pdfW / pdfH;
-      let renderW, renderH;
-      if (imgRatio > pageRatio) {
-        renderW = pdfW - 10;
-        renderH = renderW / imgRatio;
-      } else {
-        renderH = pdfH - 10;
-        renderW = renderH * imgRatio;
-      }
-      const x = (pdfW - renderW) / 2;
-      const y = (pdfH - renderH) / 2;
-      pdf.addImage(imgData, 'JPEG', x, y, renderW, renderH);
 
-      const nome = `RNC_${this.val('numeroRnc') || 'sem-numero'}.pdf`;
-      pdf.save(nome);
+      if (mode === 'print') {
+        await printDocument('<img class="print-full" src="' + imgData + '">', 'landscape');
+      } else {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const pdfW = pdf.internal.pageSize.getWidth();
+        const pdfH = pdf.internal.pageSize.getHeight();
+        const imgRatio = canvas.width / canvas.height;
+        const pageRatio = pdfW / pdfH;
+        let renderW, renderH;
+        if (imgRatio > pageRatio) {
+          renderW = pdfW - 10;
+          renderH = renderW / imgRatio;
+        } else {
+          renderH = pdfH - 10;
+          renderW = renderH * imgRatio;
+        }
+        const x = (pdfW - renderW) / 2;
+        const y = (pdfH - renderH) / 2;
+        pdf.addImage(imgData, 'JPEG', x, y, renderW, renderH);
+
+        const nome = `RNC_${this.val('numeroRnc') || 'sem-numero'}.pdf`;
+        pdf.save(nome);
+      }
 
       // Registra no histórico (sem imagens, conforme combinado)
       const data = this.collect();
@@ -1596,7 +1711,7 @@ const rnc = {
         items: data
       });
 
-      toast('PDF gerado e salvo no histórico');
+      toast(mode === 'print' ? 'Enviado para impressão' : 'PDF gerado e salvo no histórico');
     } catch (err) {
       console.error(err);
       toast('Erro ao gerar o PDF', 'erro');
@@ -1643,13 +1758,13 @@ const placa = {
     toast('Formulário de Placa limpo');
   },
 
-  async generatePDF() {
+  async generatePDF(mode = 'download') {
     if (!this.val('destino') || !this.val('solicitante')) {
       toast('Preencha pelo menos o Destino e o Solicitante', 'erro');
       return;
     }
 
-    toast('Gerando PDF, aguarde...');
+    toast(mode === 'print' ? 'Preparando impressão...' : 'Gerando PDF, aguarde...');
 
     const data = this.collect();
     const cont = (data.container || '').toLowerCase() === 'sim' ? 'sim' : 'não';
@@ -1673,27 +1788,32 @@ const placa = {
         backgroundColor: '#ffffff'
       });
 
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-      const pdfW = pdf.internal.pageSize.getWidth();
-      const pdfH = pdf.internal.pageSize.getHeight();
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      const imgRatio = canvas.width / canvas.height;
-      const pageRatio = pdfW / pdfH;
-      let renderW, renderH;
-      if (imgRatio > pageRatio) {
-        renderW = pdfW - 10;
-        renderH = renderW / imgRatio;
-      } else {
-        renderH = pdfH - 10;
-        renderW = renderH * imgRatio;
-      }
-      const x = (pdfW - renderW) / 2;
-      const y = (pdfH - renderH) / 2;
-      pdf.addImage(imgData, 'JPEG', x, y, renderW, renderH);
 
-      const destinoSafe = (data.destino || 'placa').replace(/[^\wÀ-ú -]/g, '').trim().replace(/\s+/g, '-');
-      pdf.save(`placa-palete_${destinoSafe || 'placa'}.pdf`);
+      if (mode === 'print') {
+        await printDocument('<img class="print-full" src="' + imgData + '">', 'landscape');
+      } else {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const pdfW = pdf.internal.pageSize.getWidth();
+        const pdfH = pdf.internal.pageSize.getHeight();
+        const imgRatio = canvas.width / canvas.height;
+        const pageRatio = pdfW / pdfH;
+        let renderW, renderH;
+        if (imgRatio > pageRatio) {
+          renderW = pdfW - 10;
+          renderH = renderW / imgRatio;
+        } else {
+          renderH = pdfH - 10;
+          renderW = renderH * imgRatio;
+        }
+        const x = (pdfW - renderW) / 2;
+        const y = (pdfH - renderH) / 2;
+        pdf.addImage(imgData, 'JPEG', x, y, renderW, renderH);
+
+        const destinoSafe = (data.destino || 'placa').replace(/[^\wÀ-ú -]/g, '').trim().replace(/\s+/g, '-');
+        pdf.save(`placa-palete_${destinoSafe || 'placa'}.pdf`);
+      }
 
       historico.add({
         type: 'placa',
@@ -1701,7 +1821,7 @@ const placa = {
         items: data
       });
 
-      toast('PDF gerado e salvo no histórico');
+      toast(mode === 'print' ? 'Enviado para impressão' : 'PDF gerado e salvo no histórico');
     } catch (err) {
       console.error(err);
       toast('Erro ao gerar o PDF', 'erro');
@@ -2115,7 +2235,7 @@ const proto = {
     toast('Formulário limpo');
   },
 
-  async gerarPDF() {
+  async gerarPDF(mode = 'download') {
     const d = this.getData();
     if (!d.num) { toast('Preencha o Nº do Protocolo', 'erro'); return; }
     if (!d.solicitante) { toast('Preencha o Solicitante', 'erro'); return; }
@@ -2154,14 +2274,20 @@ const proto = {
 
     try {
       const canvas = await html2canvas(c, {scale:2, useCORS:true, allowTaint:true, backgroundColor:'#ffffff', width:794});
-      const pdf = new window.jspdf.jsPDF('p','mm','a4');
-      const pw=210, ph=297;
       const imgData = canvas.toDataURL('image/jpeg',0.95);
-      const iw=pw, ih=(canvas.height*iw)/canvas.width;
-      if(ih<=ph){pdf.addImage(imgData,'JPEG',0,0,iw,ih);}
-      else{let hl=ih,pos=0;pdf.addImage(imgData,'JPEG',0,pos,iw,ih);hl-=ph;while(hl>0){pos-=ph;pdf.addPage();pdf.addImage(imgData,'JPEG',0,pos,iw,ih);hl-=ph;}}
-      pdf.save('protocolo_'+(d.num||'sem_numero')+'_'+(d.data||'sem_data').replace(/\//g,'-')+'.pdf');
-      toast('PDF gerado com sucesso!');
+
+      if (mode === 'print') {
+        await printDocument('<img class="print-full" src="' + imgData + '">', 'portrait');
+        toast('Enviado para impressão');
+      } else {
+        const pdf = new window.jspdf.jsPDF('p','mm','a4');
+        const pw=210, ph=297;
+        const iw=pw, ih=(canvas.height*iw)/canvas.width;
+        if(ih<=ph){pdf.addImage(imgData,'JPEG',0,0,iw,ih);}
+        else{let hl=ih,pos=0;pdf.addImage(imgData,'JPEG',0,pos,iw,ih);hl-=ph;while(hl>0){pos-=ph;pdf.addPage();pdf.addImage(imgData,'JPEG',0,pos,iw,ih);hl-=ph;}}
+        pdf.save('protocolo_'+(d.num||'sem_numero')+'_'+(d.data||'sem_data').replace(/\//g,'-')+'.pdf');
+        toast('PDF gerado com sucesso!');
+      }
       const histData = Object.assign({}, d); delete histData.imgs;
       historico.add({type:'proto', title:'Protocolo #'+d.num+' — '+d.solicitante, items: histData});
     } catch(err) { console.error(err); toast('Erro ao gerar PDF','erro'); }
